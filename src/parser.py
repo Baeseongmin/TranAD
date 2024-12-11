@@ -5,8 +5,8 @@ parser.add_argument('--dataset',
 					metavar='-d', 
 					type=str, 
 					required=False,
-					default='synthetic',
-                    help="dataset from ['synthetic', 'SMD']")
+					default='GAS',  # 기본값을 GAS로 변경
+                    help="dataset from ['GAS', 'SMD']")  # 설명에 GAS 추가
 parser.add_argument('--model', 
 					metavar='-m', 
 					type=str, 
@@ -14,6 +14,9 @@ parser.add_argument('--model',
 					default='LSTM_Multivariate',
                     help="model name")
 parser.add_argument('--test', 
+					action='store_true', 
+					help="test the model")
+parser.add_argument('--test1', 
 					action='store_true', 
 					help="test the model")
 parser.add_argument('--retrain', 

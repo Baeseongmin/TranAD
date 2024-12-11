@@ -2,6 +2,8 @@ import numpy as np
 from sklearn.metrics import ndcg_score
 from src.constants import lm
 
+# 모델이 예측한 순위 리스트에서 상위 **p%**에 **실제 이상치(또는 레이블이 1인 데이터)**가 얼마나 포함되어 있는지를 평가
+#  **Hit@100%**가 0.75라면, 상위 100%의 항목 중 75%가 실제 이상치로 잘 맞춰졌다는 의미
 def hit_att(ascore, labels, ps = [100, 150]):
 	res = {}
 	for p in ps:
@@ -18,6 +20,8 @@ def hit_att(ascore, labels, ps = [100, 150]):
 		res[f'Hit@{p}%'] = np.mean(hit_score)
 	return res
 
+# 순위가 높은 위치에서 예측된 이상치가 얼마나 잘 맞았는지를 가중치를 두고 평가
+# *NDCG@100%**가 0.85라면, 상위 100%에서 모델의 예측이 이상적으로 맞춘 결과의 85% 정도의 성능을 보여주고 있다는 뜻
 def ndcg(ascore, labels, ps = [100, 150]):
 	res = {}
 	for p in ps:

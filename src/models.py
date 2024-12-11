@@ -122,7 +122,7 @@ class DAGMM(nn.Module):
 		gamma = self.estimate(z)
 		return z_c, x_hat.view(-1), z, gamma.view(-1)
 
-## OmniAnomaly Model (KDD 19)
+## OmniAnomaly Model (KDD 19) #^^
 class OmniAnomaly(nn.Module):
 	def __init__(self, feats):
 		super(OmniAnomaly, self).__init__()
@@ -159,7 +159,7 @@ class OmniAnomaly(nn.Module):
 		x = self.decoder(x)
 		return x.view(-1), mu.view(-1), logvar.view(-1), hidden
 
-## USAD Model (KDD 20)
+## USAD Model (KDD 20) #^^
 class USAD(nn.Module):
 	def __init__(self, feats):
 		super(USAD, self).__init__()
@@ -197,7 +197,7 @@ class USAD(nn.Module):
 		ae2ae1 = self.decoder2(self.encoder(ae1))
 		return ae1.view(-1), ae2.view(-1), ae2ae1.view(-1)
 
-## MSCRED Model (AAAI 19)
+## MSCRED Model (AAAI 19) #^^
 class MSCRED(nn.Module):
 	def __init__(self, feats):
 		super(MSCRED, self).__init__()
@@ -254,7 +254,7 @@ class CAE_M(nn.Module):
 		x = self.decoder(z)
 		return x.view(-1)
 
-## MTAD_GAT Model (ICDM 20)
+## MTAD_GAT Model (ICDM 20) #^^
 class MTAD_GAT(nn.Module):
 	def __init__(self, feats):
 		super(MTAD_GAT, self).__init__()
@@ -270,26 +270,44 @@ class MTAD_GAT(nn.Module):
 		self.gru = nn.GRU((feats+1)*feats*3, feats*feats, 1)
 
 	def forward(self, data, hidden):
-		hidden = torch.rand(1, 1, self.n_hidden, dtype=torch.float64) if hidden is not None else hidden
-		data = data.view(self.n_window, self.n_feats)
-		data_r = torch.cat((torch.zeros(1, self.n_feats), data))
+		# 그래프를 데이터와 동일한 디바이스로 이동
+		self.g = self.g.to(data.device)  
+		hidden = hidden.to(data.device) if hidden is not None else torch.rand(
+    	1, 1, self.n_hidden, dtype=data.dtype, device=data.device)
+
+
+		a = torch.zeros(1, self.n_feats, device=data.device)
+
+		# 크기 출력
+		print(f"data shape: {data.shape}")  # [60, 2]
+		print(f"zeros_tensor shape: {a.shape}")  # [1, 2]
+
+		# 연결 결과
+		data_r = torch.cat((a, data), dim=0)
+		print(f"data_r shape: {data_r.shape}")  # [61, 2]
+
+
+		data_r = torch.cat((torch.zeros(1, self.n_feats, device=data.device), data))
 		feat_r = self.feature_gat(self.g, data_r)
-		data_t = torch.cat((torch.zeros(1, self.n_feats), data.t()))
+
+		data_t = torch.cat((torch.zeros(1, self.n_feats, device=data.device), data.t()))
 		time_r = self.time_gat(self.g, data_t)
-		data = torch.cat((torch.zeros(1, self.n_feats), data))
-		data = data.view(self.n_window+1, self.n_feats, 1)
-		x = torch.cat((data, feat_r, time_r), dim=2).view(1, 1, -1)
+
+		data_prep = torch.cat((torch.zeros(1, self.n_feats, device=data.device), data))
+		data_prep = data_prep.view(self.n_window + 1, self.n_feats, 1)
+
+		x = torch.cat((data_prep, feat_r, time_r), dim=2).view(1, 1, -1)
 		x, h = self.gru(x, hidden)
 		return x.view(-1), h
 
-## GDN Model (AAAI 21)
+## GDN Model (AAAI 21) #^^
 class GDN(nn.Module):
 	def __init__(self, feats):
 		super(GDN, self).__init__()
 		self.name = 'GDN'
 		self.lr = 0.0001
 		self.n_feats = feats
-		self.n_window = 5
+		self.n_window = 60
 		self.n_hidden = 16
 		self.n = self.n_window * self.n_feats
 		src_ids = np.repeat(np.array(list(range(feats))), feats)
@@ -309,6 +327,7 @@ class GDN(nn.Module):
 
 	def forward(self, data):
 		# Bahdanau style attention
+		self.g = self.g.to(data.device)  # 데이터의 장치와 동일하게 이동
 		att_score = self.attention(data).view(self.n_window, 1)
 		data = data.view(self.n_window, self.n_feats)
 		data_r = torch.matmul(data.permute(1, 0), att_score)
@@ -319,7 +338,7 @@ class GDN(nn.Module):
 		x = self.fcn(feat_r)
 		return x.view(-1)
 
-# MAD_GAN (ICANN 19)
+# MAD_GAN (ICANN 19) #
 class MAD_GAN(nn.Module):
 	def __init__(self, feats):
 		super(MAD_GAN, self).__init__()
@@ -487,38 +506,73 @@ class TranAD_SelfConditioning(nn.Module):
 		x2 = self.fcn(self.transformer_decoder2(*self.encode(src, c, tgt)))
 		return x1, x2
 
+
+
 # Proposed Model + Self Conditioning + Adversarial + MAML (VLDB 22)
 class TranAD(nn.Module):
 	def __init__(self, feats):
 		super(TranAD, self).__init__()
 		self.name = 'TranAD'
-		self.lr = lr
+		self.lr = 0.0001
 		self.batch = 128
 		self.n_feats = feats
-		self.n_window = 10
-		self.n = self.n_feats * self.n_window
-		self.pos_encoder = PositionalEncoding(2 * feats, 0.1, self.n_window)
+		self.n_window = 60 # 1분치 데이터
+		#self.n_window = 300 # 5분치 데이터
+		#self.n_window = 600 # 10분치 데이터
+
+		self.n = self.n_feats * self.n_window # 전체 입력 크기
+
+		# Positional Encoding - 순서정보를 추가해주는 인코더(각 시점에서의 순서 정보를 사인 및 코사인 값을 사용해 입력 데이터에 더해주는 역할)
+		self.pos_encoder = PositionalEncoding(2 * feats, 0.1, self.n_window) # *2 해준 이유는 첫 번째 차원: 사인 값 / 두 번째 차원: 코사인 값을 차원에 추가해줘 순서정보를 추가해주기 위해
+
+		# Transformer의 인코더에 필요한 단일 레이어를 정의합니다.
 		encoder_layers = TransformerEncoderLayer(d_model=2 * feats, nhead=feats, dim_feedforward=16, dropout=0.1)
+		# 여러 개의 TransformerEncoderLayer를 쌓아 완전한 Transformer 인코더 블록을 구성
 		self.transformer_encoder = TransformerEncoder(encoder_layers, 1)
+
+		# tgt를 입력으로 받아, memory와의 어텐션(attention) 연산을 통해 tgt의 각 시점에 대한 새로운 표현을 만듬
+		# - 진짜 데이터를 적절하게 재구출(진짜 같은 가짜 데이터 생성)
+		# reconstruction decoder
 		decoder_layers1 = TransformerDecoderLayer(d_model=2 * feats, nhead=feats, dim_feedforward=16, dropout=0.1)
 		self.transformer_decoder1 = TransformerDecoder(decoder_layers1, 1)
+
+		# - 진짜 데이터는 적절하게 재구축하고, 가짜 데이터는 재구축하지 못함
+		# -> decoder1 에서 생성한 가짜 정상 데이터가 들어 오더라도 재구축을 잘 못하도록 학습하는 것이 목표
+		# prediction decoder
 		decoder_layers2 = TransformerDecoderLayer(d_model=2 * feats, nhead=feats, dim_feedforward=16, dropout=0.1)
 		self.transformer_decoder2 = TransformerDecoder(decoder_layers2, 1)
-		self.fcn = nn.Sequential(nn.Linear(2 * feats, feats), nn.Sigmoid())
 
-	def encode(self, src, c, tgt):
-		src = torch.cat((src, c), dim=2)
-		src = src * math.sqrt(self.n_feats)
-		src = self.pos_encoder(src)
-		memory = self.transformer_encoder(src)
+		self.fcn = nn.Sequential(
+			nn.Linear(2 * feats, feats),
+			# nn.Dropout(p=0.3),
+			#nn.Sigmoid()
+			)
+
+
+	# src : 소스 데이터, 즉 입력 시퀀스 / c : 조건데이터, self-conditioning하기 위한 변수 / tgt : 목표 데이터, 디코더에 입력될 타겟 시퀀스
+	def encode(self, src, c, tgt):  # **kwargs 추가
+
+		# 입력데이터 src와 c의 정보를 하나의 텐서로 결합하는 역할(지정한 차원에 따라 dim = 2)
+		src = torch.cat((src, c), dim=2) # 차원을 맞춰주기 위해 Complete Sequence와 Focus Score Concatenate연산
+		src = src * math.sqrt(self.n_feats) # 입력 데이터에 일정한 스케일링 적용
+		src = self.pos_encoder(src) #  위치 정보를 기존 sequence에 더해줌
+		memory = self.transformer_encoder(src) # Self-Attention
 		tgt = tgt.repeat(1, 1, 2)
 		return tgt, memory
 
-	def forward(self, src, tgt):
+		
+	def forward(self, src, tgt):  # scr - window : 시계열 데이터를 변환한 입력 시퀀스(sequence, batch_szie, feature) / tgt - elem : 디코더의 목표값으로, 재구성된 값이 실제 타겟 값 (마지막 데이터 하나)
 		# Phase 1 - Without anomaly scores
-		c = torch.zeros_like(src)
-		x1 = self.fcn(self.transformer_decoder1(*self.encode(src, c, tgt)))
+		c = torch.zeros_like(src) # self-conditioning을 위한 초기 조건 텐서를 설정(Focus Score)
+		# x1 : 입력 시계열 데이터를 받아 원래 데이터를 최대한 원래 상태로 재구성
+		
+		x1 = self.fcn(self.transformer_decoder1(*self.encode(src, c, tgt))) 
+
 		# Phase 2 - With anomaly scores
-		c = (x1 - src) ** 2
-		x2 = self.fcn(self.transformer_decoder2(*self.encode(src, c, tgt)))
-		return x1, x2
+		# 진짜 데이터는 적절하게 재구축하고, 가짜 데이터는 재국축하지 못함
+		c = (x1 - src) ** 2 # 재구성 오류 / Self-Conditioning 사용
+		x2 = self.fcn(self.transformer_decoder2(*self.encode(src, c, tgt))) 
+		return x1, x2 
+
+
+
