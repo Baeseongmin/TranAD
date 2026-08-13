@@ -2,7 +2,7 @@
 
 ## 1. Project Overview
 
-본 프로젝트는 **TranAD(Deep Transformer Networks for Anomaly Detection in Multivariate Time Series Data)**를 기반으로, 다변량 센서 데이터의 이상 상태를 탐지하기 위해 기존 모델을 수정·적용한 프로젝트입니다.
+본 프로젝트는 TranAD(Deep Transformer Networks for Anomaly Detection in Multivariate Time Series Data)를 기반으로, 다변량 센서 데이터의 이상 상태를 탐지하기 위해 기존 모델을 수정·적용한 프로젝트입니다.
 
 정상 상태의 센서 데이터를 기반으로 모델이 정상 패턴을 학습하도록 구성하고, 실제 환경에서 발생할 수 있는 이상 상황을 고려하여 데이터를 구성하였습니다. 또한 기존 TranAD 구조 및 학습·평가 과정을 프로젝트 환경에 맞게 수정하여 이상탐지 성능을 검증했습니다.
 
