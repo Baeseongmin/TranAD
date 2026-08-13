@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-본 프로젝트는 **TranAD(Deep Transformer Networks for Anomaly Detection in Multivariate Time Series Data)**의 공개 구현을 기반으로, 가스 센서 시계열 데이터의 이상 상태를 탐지하기 위해 데이터 전처리, 이상 데이터 생성, 평가 방법 및 시각화 기능을 수정·확장한 프로젝트입니다.
+본 프로젝트는 TranAD(Deep Transformer Networks for Anomaly Detection in Multivariate Time Series Data)의 공개 구현을 기반으로, 가스 센서 시계열 데이터의 이상 상태를 탐지하기 위해 데이터 전처리, 이상 데이터 생성, 평가 방법 및 시각화 기능을 수정·확장한 프로젝트입니다.
 
 실제 환경에서는 충분한 가스 누출 이상 데이터를 확보하기 어렵다는 문제를 고려하여 정상 센서 데이터를 기반으로 학습 데이터를 구성하고, 가스 누출 상황을 모사한 연속형 이상 데이터를 생성하여 모델의 탐지 성능을 평가했습니다.
 
